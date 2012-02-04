@@ -64,16 +64,31 @@ module.exports = {
         method: "GET",
         uri: 'http://deckbox.org/sets/' + req.params.set + '/export'
       }, function(err, _res, body) {
-        var cardList = [];
+        var cardList = {
+          'deck': [],
+          'sideboard': []
+        };
+        // Divide the html into two sections, one above and one below the sideboard title
+        var bodySplit = body.split('>Sideboard:<');
         var matches;
-        while ((matches = cardRegex.exec(body))) {
+        while ((matches = cardRegex.exec(bodySplit[0]))) { // Parse the deck
           var cardInfoStr = matches[1].replace(newlineRegex, '').trim();
           var parts = cardInfoStr.split(' ');
           var count = parseInt(parts[0]);
           if (count) {
             parts.shift();
             var name = parts.join(' ');
-            cardList.push({name: name, count: count});
+            cardList.deck.push({name: name, count: count});
+          }
+        }
+        while ((matches = cardRegex.exec(bodySplit[1]))) { // Parse the sideboard
+          var cardInfoStr = matches[1].replace(newlineRegex, '').trim();
+          var parts = cardInfoStr.split(' ');
+          var count = parseInt(parts[0]);
+          if (count) {
+            parts.shift();
+            var name = parts.join(' ');
+            cardList.sideboard.push({name: name, count: count});
           }
         }
         cb(null, cardList);
