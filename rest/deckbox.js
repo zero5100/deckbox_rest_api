@@ -21,8 +21,30 @@ module.exports = {
         this.getHtml('http://www.deckbox.org/users/' + req.params.user, function(err, $) {
           var decks = [];
           $('a.simple').each(function(link) {
-            // if (link.title === "Inventory") {
-              decks.push(link.href);
+            if (link.attribs.title) {
+              decks.push({
+                "title": link.attribs.title,
+                "href": link.attribs.href
+              });
+            }
+          });
+          
+          cb(null, decks);
+        });
+      });
+    },
+    
+    "/users/test/:user": function(req, res, cb) {
+      node_io.scrape(function() {
+        this.getHtml('http://www.deckbox.org/users/' + req.params.user, function(err, $) {
+          var decks = [];
+          $('li.deck a').each(function(deck) {
+            // if (deck.attribs.title) {
+              // decks.push({
+                // "title": deck.attribs.title,
+                // "href": deck.attribs.href
+              // });
+              decks.push(deck);
             // }
           });
           
