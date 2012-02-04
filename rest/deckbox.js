@@ -68,27 +68,21 @@ module.exports = {
           'deck': [],
           'sideboard': []
         };
+        
         // Divide the html into two sections, one above and one below the sideboard title
         var bodySplit = body.split('>Sideboard:<');
+        var deckTypes = ['deck', 'sideboard'];
         var matches;
-        while ((matches = cardRegex.exec(bodySplit[0]))) { // Parse the deck
-          var cardInfoStr = matches[1].replace(newlineRegex, '').trim();
-          var parts = cardInfoStr.split(' ');
-          var count = parseInt(parts[0]);
-          if (count) {
-            parts.shift();
-            var name = parts.join(' ');
-            cardList.deck.push({name: name, count: count});
-          }
-        }
-        while ((matches = cardRegex.exec(bodySplit[1]))) { // Parse the sideboard
-          var cardInfoStr = matches[1].replace(newlineRegex, '').trim();
-          var parts = cardInfoStr.split(' ');
-          var count = parseInt(parts[0]);
-          if (count) {
-            parts.shift();
-            var name = parts.join(' ');
-            cardList.sideboard.push({name: name, count: count});
+        for (var i=0; i < deckTypes.length; i++) { // Parse the deck for deck and sideboard
+          while ((matches = cardRegex.exec(bodySplit[i]))) {
+            var cardInfoStr = matches[1].replace(newlineRegex, '').trim();
+            var parts = cardInfoStr.split(' ');
+            var count = parseInt(parts[0]);
+            if (count) {
+              parts.shift();
+              var name = parts.join(' ');
+              cardList[deckTypes[i]].push({name: name, count: count});
+            }
           }
         }
         cb(null, cardList);
