@@ -1,0 +1,7 @@
+public/feather-res-cache
+node_modules
+.DS_Store
+*.bak
+*.db
+*.out
+*.gz
