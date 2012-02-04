@@ -1,5 +1,23 @@
 var feather = require("../lib/feather").getFeather();
 var node_io = require('node.io');
+var _ = require("underscore")._;
+
+var getUserDeckList = function(user, cb) {
+  node_io.scrape(function() {
+    this.getHtml('http://www.deckbox.org/users/' + user, function(err, $) {
+      var decks = [];
+      $('a.simple').each(function(link) {
+        if (link.attribs.title) {
+          decks.push({
+            "title": link.attribs.title,
+            "href": link.attribs.href
+          });
+        }
+      });
+      cb(decks);
+    });
+  });
+};
 
 module.exports = {
   "get": {
@@ -17,39 +35,23 @@ module.exports = {
     },
     
     "/users/:user": function(req, res, cb) {
-      node_io.scrape(function() {
-        this.getHtml('http://www.deckbox.org/users/' + req.params.user, function(err, $) {
-          var decks = [];
-          $('a.simple').each(function(link) {
-            if (link.attribs.title) {
-              decks.push({
-                "title": link.attribs.title,
-                "href": link.attribs.href
-              });
-            }
-          });
-          
-          cb(null, decks);
-        });
+      getUserDeckList(req.params.user, function(deckList) {
+        cb(null, deckList);
       });
     },
     
-    "/users/test/:user": function(req, res, cb) {
-      node_io.scrape(function() {
-        this.getHtml('http://www.deckbox.org/users/' + req.params.user, function(err, $) {
-          var decks = [];
-          $('li.deck a').each(function(deck) {
-            // if (deck.attribs.title) {
-              // decks.push({
-                // "title": deck.attribs.title,
-                // "href": deck.attribs.href
-              // });
-              decks.push(deck);
-            // }
-          });
-          
-          cb(null, decks);
+    "/users/:user/decks": function(req, res, cb) {
+      getUserDeckList(req.params.user, function(deckList) {
+        cb(null, deckList);
+      });
+    },
+    
+    "/users/:user/decks/:name": function(req, res, cb) {
+      getUserDeckList(req.params.user, function(deckList) {
+        var selected = _.find(deckList, function(deck) {
+          return deck.title.toLowerCase() === req.params.name.toLowerCase();
         });
+        cb(null, selected);
       });
     },
     
