@@ -1,7 +1,8 @@
 var feather = require("../lib/feather").getFeather();
 var node_io = require('node.io'),
   request = require('request'),
-  _ = require("underscore")._;
+  _ = require("underscore")._,
+  gatherer = require("../lib/gathererAPI");
 
 
 var getUserDeckList = function(user, cb) {
@@ -85,7 +86,27 @@ module.exports = {
             }
           }
         }
-        cb(null, cardList);
+
+        // is the requestor also asking us to prefetch card metadata from gatherer?
+        if (req.query && req.query.metadata) {
+          var sem = new feather.lang.Semaphore(function() {
+            cb(null, cardList);
+          });
+          //first main deck, then sideboard
+          //TODO: could optimize this for case where sideboard contains overlap card names from main deck; for now who cares
+          _.each([cardList.deck, cardList.sideboard], function(deck) {
+            _.each(deck, function(card) {
+              sem.increment();
+              gatherer.getCardMetadataByName(card.name, function(err, metadata) {
+                //TODO: check and do something about errors
+                card.metadata = metadata;
+                sem.execute();
+              });
+            });
+          });
+        } else {
+          cb(null, cardList);
+        }
       });
     }
   }
