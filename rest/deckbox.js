@@ -1,5 +1,6 @@
 var feather = require("../lib/feather").getFeather();
-var node_io = require('node.io');
+var node_io = require('node.io'),
+  request = require('request');
 
 module.exports = {
   "get": {
@@ -54,21 +55,25 @@ module.exports = {
     },
     
     "/sets/:set": function(req, res, cb) {
-      node_io.scrape(function() {
-        this.getHtml('http://www.deckbox.org/sets/' + req.params.set, function(err, $) {
-          var cardList = [];
-          $('tr').each(function(cards) {
-            // Check if its a card (should have a numeric id)
-            if (cards.attribs && cards.attribs.id && $.isNumeric(cards.attribs.id)) {
-              var cardData = {};
-              cards.children.each(function(info) {
-                cardData[info.attribs.class] = info.children[0];
-                cardList.push(cardData);
-              });
-            }
-          });
-          cb(null, cardList);
-        });
+      var cardRegex = /(\d*\s[^<]+)<br\/>/g,
+        newlineRegex = /\n/g;
+      request({
+        method: "GET",
+        uri: 'http://deckbox.org/sets/' + req.params.set + '/export'
+      }, function(err, _res, body) {
+        var cardList = [];
+        var matches;
+        while ((matches = cardRegex.exec(body))) {
+          var cardInfoStr = matches[1].replace(newlineRegex, '').trim();
+          var parts = cardInfoStr.split(' ');
+          var count = parseInt(parts[0]);
+          if (count) {
+            parts.shift();
+            var name = parts.join(' ');
+            cardList.push({name: name, count: count});
+          }
+        }
+        cb(null, cardList);
       });
     }
   }
