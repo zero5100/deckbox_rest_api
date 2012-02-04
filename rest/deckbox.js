@@ -51,6 +51,25 @@ module.exports = {
           cb(null, decks);
         });
       });
+    },
+    
+    "/sets/:set": function(req, res, cb) {
+      node_io.scrape(function() {
+        this.getHtml('http://www.deckbox.org/sets/' + req.params.set, function(err, $) {
+          var cardList = [];
+          $('tr').each(function(cards) {
+            // Check if its a card (should have a numeric id)
+            if (cards.attribs && cards.attribs.id && $.isNumeric(cards.attribs.id)) {
+              var cardData = {};
+              cards.children.each(function(info) {
+                cardData[info.attribs.class] = info.children[0];
+                cardList.push(cardData);
+              });
+            }
+          });
+          cb(null, cardList);
+        });
+      });
     }
   }
 };
