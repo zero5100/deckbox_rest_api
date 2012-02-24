@@ -58,6 +58,24 @@ module.exports = {
       });
     },
     
+    "/users/:user/profile/friends": function(req, res, cb) {
+      node_io.scrape(function() {
+        this.getHtml('http://www.deckbox.org/users/' + req.params.user + '/friends', function(err, $) {
+          var friends = [];
+          $('.section_title a.simple').each(function(link) {
+            var userName = _.first(link.children);
+            if (userName.data) {
+              friends.push({
+                "name": userName.data,
+                "href": link.attribs.href
+              });
+            }
+          });
+          cb(friends);
+        });
+      });
+    },
+    
     "/sets/:set": function(req, res, cb) {
       var cardRegex = /(\d*\s[^<]+)<br\/>/g,
         newlineRegex = /\n/g;
