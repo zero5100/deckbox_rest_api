@@ -4,6 +4,25 @@ var node_io = require('node.io'),
   _ = require("underscore")._,
   gatherer = require("../lib/gathererAPI");
 
+var getSelector = function(page, cb) {
+  debugger;
+  var uri = 'http://deckbox.org' + page;
+  request({
+      method: "GET",
+      uri: uri
+    }, function(err, _res, body) {
+      feather.domPool.getResource(function(dom) {
+        debugger;
+        try {
+          dom.$("body").append(dom.$(body));
+          
+          cb(null, dom);
+        } catch (ex) {
+          cb(ex);
+        }
+      });        
+  });
+};
 
 var getUserDeckList = function(user, cb) {
   node_io.scrape(function() {
@@ -59,20 +78,22 @@ module.exports = {
     },
     
     "/users/:user/profile/friends": function(req, res, cb) {
-      node_io.scrape(function() {
-        this.getHtml('http://www.deckbox.org/users/' + req.params.user + '/friends', function(err, $) {
-          var friends = [];
-          $('.section_title a.simple').each(function(link) {
-            var userName = _.first(link.children);
-            if (userName.data) {
-              friends.push({
-                "name": userName.data,
-                "href": link.attribs.href
-              });
-            }
-          });
-          cb(friends);
+      getSelector('/users/' + req.params.user + '/friends', function(err, dom) {
+        var friends = [];
+        debugger;
+        dom.$('a.simple').each(function(link) {
+          debugger;
+          var userName = _.first(link.children);
+          if (userName.data) {
+            friends.push({
+              "name": userName.data,
+              "href": link.attribs.href
+            });
+          }
         });
+        
+        feather.domPool.release(dom); // Release dom back to the pool
+        cb(friends);      
       });
     },
     
